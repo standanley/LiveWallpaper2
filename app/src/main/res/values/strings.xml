@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">LiveWallpaper2</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="wallpaper_description">This is the description (so meta)</string>
+</resources>
