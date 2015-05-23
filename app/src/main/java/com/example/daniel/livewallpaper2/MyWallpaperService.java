@@ -38,7 +38,9 @@ public class MyWallpaperService extends WallpaperService {
 
         };
 
-        private List<MyPoint> circles;
+        private final int PIXELS_PER_SQUARE = 64;
+
+        private Maze maze;
         private Paint paint = new Paint();
         private int width;
         int height;
@@ -53,14 +55,14 @@ public class MyWallpaperService extends WallpaperService {
             maxNumber = Integer
                     .valueOf(prefs.getString("numberOfCircles", "4"));
             touchEnabled = prefs.getBoolean("touch", true);
-            Log.v("tag1", "Setting touchenabled to "+touchEnabled);
-            circles = new ArrayList<MyPoint>();
+            Log.v("tag1", "Setting touchEnabled to "+touchEnabled);
+            maze = null;
 
             paint.setAntiAlias(true);
             paint.setColor(Color.WHITE);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeJoin(Paint.Join.ROUND);
-            paint.setStrokeWidth(10f);
+            paint.setStyle(Paint.Style.FILL);
+            //paint.setStrokeJoin(Paint.Join.ROUND);
+            //paint.setStrokeWidth(10f);
             handler.post(drawRunner);
         }
 
@@ -88,11 +90,7 @@ public class MyWallpaperService extends WallpaperService {
         public void onSurfaceChanged(SurfaceHolder holder, int format,
                                      int width, int height) {
             Log.v("tag1", "In onSurfaceChanged");
-            for(int i=0;i<maxNumber;i++){
-                int x = (int) (width * Math.random());
-                int y = (int) (height * Math.random());
-                circles.add(new MyPoint(x, y));
-            }
+            maze = new Maze(width/PIXELS_PER_SQUARE, height/PIXELS_PER_SQUARE);
             this.width = width;
             this.height = height;
             super.onSurfaceChanged(holder, format, width, height);
@@ -110,11 +108,7 @@ public class MyWallpaperService extends WallpaperService {
                     canvas = holder.lockCanvas();
                     if (canvas != null) {
                         Log.v("tag1", "In onTouchEvent 2");
-                        canvas.drawColor(Color.BLACK);
-                        circles.clear();
-                        circles.add(new MyPoint(x, y));
-                        drawCircles(canvas, circles);
-
+                        // Do your thing here
                     }
                 } finally {
                     if (canvas != null)
@@ -131,16 +125,47 @@ public class MyWallpaperService extends WallpaperService {
             try {
                 canvas = holder.lockCanvas();
                 if (canvas != null) {
-                    moveCircles(circles);
-                    drawCircles(canvas, circles);
+                    maze.step();
+                    drawMaze(canvas);
                 }
             } finally {
                 if (canvas != null)
                     holder.unlockCanvasAndPost(canvas);
             }
             handler.removeCallbacks(drawRunner);
-            if (visible) {
-                handler.postDelayed(drawRunner, 30);
+             if(!maze.finished) handler.postDelayed(drawRunner, 250);
+        }
+
+        private void drawMaze2(Canvas canvas, ArrayList<Maze.Cell> updates){
+            if(maze.finished){
+                canvas.drawColor(Color.BLACK);
+                return;
+            }
+            paint.setColor(Color.WHITE);
+            int count = 0;
+            for(Maze.Cell c: updates){
+                count++;
+                Log.v("tag1", "Repainting update number "+count);
+                canvas.drawRect(c.x* PIXELS_PER_SQUARE, c.y*PIXELS_PER_SQUARE,
+                        (c.x+1)* PIXELS_PER_SQUARE, (c.y+1)*PIXELS_PER_SQUARE,
+                        paint);
+            }
+            paint.setColor(Color.GREEN);
+            canvas.drawRect(maze.x* PIXELS_PER_SQUARE, maze.y*PIXELS_PER_SQUARE,
+                    (maze.x+1)* PIXELS_PER_SQUARE, (maze.y+1)*PIXELS_PER_SQUARE,
+                    paint);
+        }
+
+        private void drawMaze(Canvas canvas) {
+            canvas.drawColor(Color.BLACK);
+            for(int xx = 0; xx < maze.map.length; xx++){
+                for (int yy = 0; yy < maze.map[0].length; yy++) {
+                    //drawRect(float left, float top, float right, float bottom, Paint paint)
+                    if(xx == maze.x && yy == maze.y) paint.setColor(Color.GREEN);
+                    else if(maze.map[xx][yy]) paint.setColor(Color.WHITE);
+                    else continue;
+                    canvas.drawRect(xx* PIXELS_PER_SQUARE, yy*PIXELS_PER_SQUARE,(xx+1)* PIXELS_PER_SQUARE, (yy+1)*PIXELS_PER_SQUARE, paint);
+                }
             }
         }
 
@@ -167,6 +192,7 @@ public class MyWallpaperService extends WallpaperService {
         private void drawCircles(Canvas canvas, List<MyPoint> circles) {
             canvas.drawColor(Color.BLACK);
             for (MyPoint point : circles) {
+                //drawRect(float left, float top, float right, float bottom, Paint paint)
                 canvas.drawCircle(point.x, point.y, 20.0f, paint);
             }
         }
