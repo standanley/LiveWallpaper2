@@ -3,7 +3,6 @@ package com.example.daniel.livewallpaper2;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.PriorityQueue;
 
 /**
  * Created by Daniel on 5/21/2015.
@@ -27,7 +26,7 @@ public class Maze {
 
         map = new boolean[2* xMax +1][2* yMax +1];
 
-        int x, y;
+
         Cell first = (new Cell(xMax/2, yMax/2));
         trace.add(first);
         map[first.x][first.y] = true;
@@ -38,25 +37,31 @@ public class Maze {
     /* Another step in the animation. Returns a list of all the cells that
        were updated.
      */
-    public ArrayList<Cell> step(){
-        if(finished) return flood();
-        else return make();
+    public void step(){
+        if(finished) flood();
+        else  make();
     }
 
-    private ArrayList<Cell> flood() {
+    private void flood() {
+        map = new boolean[2* xMax +1][2* yMax +1];
+        Cell first = (new Cell(xMax/2, yMax/2));
+        trace.add(first);
+        map[first.x][first.y] = true;
         finished = false;
-        return new ArrayList<>();
     }
 
     /* Another step in making the maze, returns whether it's done.
     (if it returns false, call it again) */
-    public ArrayList<Cell> make(){
+    public boolean make(){
         if(trace.size() == 0){
+            Log.v("tag1", "Setting finished A");
             finished = true;
-            return new ArrayList<>();
+            return true;
         }
-        ArrayList<Cell> toReturn = new ArrayList<>();
-        toReturn.add(new Cell(x, y));
+        //Not sure if the next three lines are needed.
+        Cell current = trace.get(trace.size() - 1);
+        x = current.x;
+        y = current.y;
 
         // Choose a direction to move from the last Cell, or pop the last one off
 
@@ -83,12 +88,15 @@ public class Maze {
             // backed into a corner
             trace.remove(trace.size()-1);
             finished = trace.size() == 0;
-            if(finished) return toReturn;
+            if(finished){
+                Log.v("tag1", "Setting finished B");
+                return true;
+            }
 
-            Cell current = trace.get(trace.size() - 1);
+            current = trace.get(trace.size() - 1);
             x = current.x;
             y = current.y;
-            return toReturn;
+            return false;
         }
         int choiceNum = (int) (Math.random()*num);
         int choice = -1; // should always be changed
@@ -109,22 +117,18 @@ public class Maze {
         switch(choice){
             case 0:
                 next = new Cell(x+2, y);
-                toReturn.add(new Cell(x+1, y));
                 map[x+1][y] = true;
                 break;
             case 1:
                 next = new Cell(x, y+2);
-                toReturn.add(new Cell(x, y+1));
                 map[x][y+1] = true;
                 break;
             case 2:
                 next = new Cell(x-2, y);
-                toReturn.add(new Cell(x-1, y));
                 map[x-1][y] = true;
                 break;
             case 3:
                 next = new Cell(x, y-2);
-                toReturn.add(new Cell(x, y-1));
                 map[x][y-1] = true;
                 break;
             default:
@@ -133,10 +137,10 @@ public class Maze {
         map[next.x][next.y] = true;
         trace.add(next);
 
-        Cell current = trace.get(trace.size() - 1);
+        current = trace.get(trace.size() - 1);
         x = current.x;
         y = current.y;
-        return toReturn;
+        return false;
     }
 
 
